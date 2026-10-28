@@ -1,0 +1,6 @@
+logging_policy:
+  name: "popularity_compatibility_mixed"
+  compatibility_weight: 0.45
+  popularity_weight: 0.40
+  random_weight: 0.15
+  temperature: 1.0

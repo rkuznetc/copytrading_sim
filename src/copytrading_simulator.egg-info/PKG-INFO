@@ -1,0 +1,13 @@
+Metadata-Version: 2.4
+Name: copytrading-simulator
+Version: 0.1.0
+Summary: Semi-synthetic simulator for copy-trading recommendation experiments
+Requires-Python: >=3.10
+Requires-Dist: numpy
+Requires-Dist: pandas
+Requires-Dist: pyyaml
+Requires-Dist: scikit-learn
+Requires-Dist: matplotlib
+Provides-Extra: dev
+Requires-Dist: pytest; extra == "dev"
+Requires-Dist: ruff; extra == "dev"

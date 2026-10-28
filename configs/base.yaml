@@ -1,0 +1,16 @@
+project:
+  name: "copytrading_simulator"
+  version: "0.1.0"
+
+random:
+  seed: 42
+
+simulation:
+  n_users: 1000
+  n_strategies: 200
+  exposures_per_user: 10
+  slate_size: 5
+
+output:
+  dir: "artifacts/datasets/base_run"
+  format: "csv"

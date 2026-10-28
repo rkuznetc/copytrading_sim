@@ -1,0 +1,7 @@
+validation:
+  min_users: 10
+  min_strategies: 10
+  check_unique_ids: true
+  check_value_ranges: true
+  check_exposure_size: true
+  check_signal_ordering: true
