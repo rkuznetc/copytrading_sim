@@ -29,6 +29,7 @@ def test_resolution_is_idempotent_and_does_not_mutate(tiny_config):
     ("simulation", "slate_size", 1.5),
     ("simulation", "slate_size", 99),
     ("random", "seed", -1),
+    ("random", "seed", 2**63),
     ("random", "seed", True),
     ("output", "format", "parquet"),
     ("output", "dir", ""),

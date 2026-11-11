@@ -106,6 +106,8 @@ def resolve_config(config: dict[str, Any]) -> dict[str, Any]:
         project[key] = _text(project.get(key), f"project.{key}")
     random = _mapping(result["random"], "random", {"seed"})
     random["seed"] = _integer(random.get("seed"), "random.seed", minimum=0)
+    if random["seed"] >= 2**63:
+        raise ValueError("random.seed must be smaller than 2**63 for portable int64 metadata")
 
     simulation_keys = {"n_users", "n_strategies", "exposures_per_user", "slate_size"}
     simulation = _mapping(result["simulation"], "simulation", simulation_keys)
