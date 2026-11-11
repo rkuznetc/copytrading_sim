@@ -11,7 +11,7 @@ from copytrading_sim.config import resolve_config
 from copytrading_sim.simulator.pipeline import run_pipeline
 from copytrading_sim.simulator.environment import SimulationEnvironment
 from copytrading_sim.simulator.exposure_policy import (
-    _build_candidate_table, _sample_slate_plackett_luce, sample_policy_slate,
+    _build_candidate_table, _sample_slate_plackett_luce, sample_policy_slate, generate_exposures,
 )
 
 
@@ -47,15 +47,19 @@ def test_popularity_training_only():
 
 
 def test_pipeline_policy_override(tiny_config):
-    tables = run_pipeline(tiny_config, policy=RandomPolicy())
-    assert tables['exposures']['policy_name'].eq('random').all()
-    assert tables['exposures']['selection_rule'].eq('uniform_without_replacement').all()
+    tables = run_pipeline(tiny_config)
+    shows = generate_exposures(tables['users'], tables['strategies'], tables['compatibility'],
+                               tiny_config, policy=RandomPolicy())
+    assert shows['policy_name'].eq('random').all()
+    assert shows['selection_rule'].eq('uniform_without_replacement').all()
 
 
 def test_model_policy_accepts_unbounded_logits(tiny_config):
     scorer = PopularityScorer({i: float(i * 10 - 20) for i in range(6)})
-    t = run_pipeline(tiny_config, policy=ScorePolicy(scorer))
-    assert t['exposures']['strategy_id'].tolist() == [5, 4] * 12
+    t = run_pipeline(tiny_config)
+    shows = generate_exposures(t['users'], t['strategies'], t['compatibility'],
+                               tiny_config, policy=ScorePolicy(scorer))
+    assert shows['strategy_id'].tolist() == [5, 4] * 12
 
 
 def test_mixed_matches_existing_scores_and_selection(tiny_config):

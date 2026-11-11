@@ -1,0 +1,11 @@
+# Для --dataset с ранее сохранённым small.yaml (seed=42, 20 стратегий, список 5).
+# Настройки генерации при --dataset берутся ИЗ сохранённого набора, не отсюда.
+simulation_config: ../small.yaml
+seeds: [42]
+methods: [random, popularity_public, popularity_train, compatibility_oracle, mixed_logger, mf]
+evaluation:
+  catalog_k: [1, 3, 5]
+  choice_k: [1, 3]
+  response_steps: 3
+output:
+  dir: artifacts/experiments

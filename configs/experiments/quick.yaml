@@ -1,0 +1,27 @@
+# Быстрый полный цикл: одна среда, шесть методов, обучение и графики.
+simulation_config: ../base.yaml
+simulation_overrides:
+  simulation:
+    n_users: 80
+    n_strategies: 40
+    exposures_per_user: 30
+    slate_size: 5
+seeds: [42]
+methods: [random, popularity_public, popularity_train, compatibility_oracle, mixed_logger, mf]
+split:
+  train_fraction: 0.6
+  validation_fraction: 0.2
+mf:
+  factors: 8
+  epochs: 60
+  batch_size: 256
+  learning_rate: 0.015
+  regularization: 0.0001
+  patience: 10
+  min_delta: 0.00001
+evaluation:
+  catalog_k: [1, 3, 5, 10]
+  choice_k: [1, 3]
+  response_steps: 5
+output:
+  dir: artifacts/experiments
