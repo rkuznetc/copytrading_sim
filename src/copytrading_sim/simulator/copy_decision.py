@@ -122,21 +122,6 @@ def build_copy_events(copy_decisions: pd.DataFrame) -> pd.DataFrame:
     """Build one-row-per-copy-event table from exposure-level decisions."""
     copied = copy_decisions[copy_decisions["copied"] == 1].copy()
 
-    if copied.empty:
-        return pd.DataFrame(
-            columns=[
-                "copy_event_id",
-                "slate_id",
-                "user_id",
-                "strategy_id",
-                "timestamp_step",
-                "position",
-                "compatibility_score",
-                "copy_probability",
-                "decision_score",
-            ]
-        )
-
     copied = copied.reset_index(drop=True)
     copied.insert(0, "copy_event_id", np.arange(len(copied), dtype=int))
 

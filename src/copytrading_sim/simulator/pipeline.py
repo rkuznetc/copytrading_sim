@@ -17,6 +17,7 @@ from copytrading_sim.simulator.copy_decision import (
 from copytrading_sim.simulator.exposure_policy import generate_exposures
 from copytrading_sim.simulator.strategy_generator import generate_strategies
 from copytrading_sim.simulator.user_generator import generate_users
+from copytrading_sim.validation.structural_checks import validate_tables
 
 
 SimulationTables = dict[str, pd.DataFrame]
@@ -83,7 +84,7 @@ def run_pipeline(
         copy_events=copy_events,
     )
 
-    return {
+    tables = {
         "users": users,
         "strategies": strategies,
         "compatibility": compatibility,
@@ -92,6 +93,8 @@ def run_pipeline(
         "copy_events": copy_events,
         "metadata": metadata,
     }
+    validate_tables(tables, config)
+    return tables
 
 
 def build_metadata(
