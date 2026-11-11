@@ -12,5 +12,6 @@ simulation:
   slate_size: 5
 
 output:
+  # Parent directory: each run is saved in a separate subdirectory.
   dir: "artifacts/datasets/small_run"
   format: "csv"

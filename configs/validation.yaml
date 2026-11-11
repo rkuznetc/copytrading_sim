@@ -1,3 +1,5 @@
+# Planning placeholder; NOT loaded in iteration 1. Do not use as --override.
+# Current structural checks are mandatory. These settings need a future implementation.
 validation:
   min_users: 10
   min_strategies: 10
