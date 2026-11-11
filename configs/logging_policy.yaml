@@ -1,6 +1,9 @@
-logging_policy:
-  name: "popularity_compatibility_mixed"
-  compatibility_weight: 0.45
-  popularity_weight: 0.40
-  random_weight: 0.15
-  temperature: 1.0
+# Optional overlay: load explicitly with --override configs/logging_policy.yaml.
+# policy_name is a label, not a selector of a different implementation.
+exposure_policy:
+  policy_name: "compatibility_popularity_mixed"
+  compatibility_weight: 0.65
+  popularity_weight: 0.25
+  social_popularity_weight: 0.10
+  noise_std: 0.05
+  temperature: 0.25

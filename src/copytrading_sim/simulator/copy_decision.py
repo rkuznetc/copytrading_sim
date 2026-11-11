@@ -7,6 +7,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from copytrading_sim.randomness import make_rng
+
 
 DEFAULT_COPY_DECISION_PARAMS = {
     "compatibility_weight": 0.65,
@@ -61,7 +63,7 @@ def simulate_copy_decisions(
 
     if rng is None:
         seed = int(config["random"]["seed"])
-        rng = np.random.default_rng(seed)
+        rng = make_rng(seed, "copy_decisions")
 
     params = _get_copy_decision_params(config)
 
@@ -119,21 +121,6 @@ def simulate_copy_decisions(
 def build_copy_events(copy_decisions: pd.DataFrame) -> pd.DataFrame:
     """Build one-row-per-copy-event table from exposure-level decisions."""
     copied = copy_decisions[copy_decisions["copied"] == 1].copy()
-
-    if copied.empty:
-        return pd.DataFrame(
-            columns=[
-                "copy_event_id",
-                "slate_id",
-                "user_id",
-                "strategy_id",
-                "timestamp_step",
-                "position",
-                "compatibility_score",
-                "copy_probability",
-                "decision_score",
-            ]
-        )
 
     copied = copied.reset_index(drop=True)
     copied.insert(0, "copy_event_id", np.arange(len(copied), dtype=int))

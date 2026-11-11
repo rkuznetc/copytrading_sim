@@ -1,27 +1,35 @@
-# Simulator specification
+# Спецификация текущей версии
 
-## Goal
-Build a semi-synthetic simulator for copy-trading recommendation experiments.
+## Назначение
 
-## Main entities
-- User
-- Strategy
-- Exposure
-- Copy outcome
+Создание воспроизводимых синтетических историй для последующих исследований
+персонализированных рекомендаций стратегий в копитрейдинге.
 
-## Simulation pipeline
-1. Generate strategies
-2. Generate users
-3. Compute compatibility
-4. Generate exposures
-5. Simulate copy decisions
-6. Simulate outcomes
-7. Export tables
-8. Validate generated data
+## Реализованный конвейер
 
-## Output tables
-- users.csv
-- strategies.csv
-- exposures.csv
-- copy_outcomes.csv
-- metadata.json
+1. Разрешить и проверить конфигурацию.
+2. Создать пользователей и стратегии отдельными потоками случайности.
+3. Рассчитать совместимость всех пар.
+4. Сформировать несколько списков показа на пользователя.
+5. Смоделировать выбор одной стратегии или отказ в каждом списке.
+6. Собрать события копирования и метаданные.
+7. Проверить структурные инварианты.
+8. При запуске через CLI сохранить отдельный набор файлов.
+
+`run_pipeline(config)` возвращает словарь таблиц в памяти. `save_run` сохраняет его,
+`load_run` проверяет и загружает без повторной симуляции. `main.py` связывает эти операции.
+
+## Выход
+
+`users`, `strategies`, `compatibility`, `exposures`, `copy_decisions`, `copy_events`,
+`metadata`. Формат сохранения — CSV со схемами и контрольными суммами в manifest.
+Конфигурация, краткая статистика и структурный отчёт сохраняются отдельно.
+
+## Ещё не реализовано
+
+Финансовый результат копирования, реальные временные ряды, независимые базовые
+рекомендатели, централизованное и федеративное обучение, интерактивная среда.
+Пустые файлы будущих модулей не означают готовность этих функций.
+
+Подробные условия: [assumptions.md](assumptions.md).
+Инструкция: [../README.md](../README.md).

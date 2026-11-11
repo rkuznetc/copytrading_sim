@@ -1,4 +1,13 @@
-.venv
-.pytest_cache
-**__pycache__
+.venv/
+.pytest_cache/
+.ruff_cache/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+artifacts/
+.coverage
+htmlcov/
+.DS_Store
 notes.txt

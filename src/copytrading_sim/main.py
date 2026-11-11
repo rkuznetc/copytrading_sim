@@ -1,75 +1,53 @@
-# src/copytrading_sim/main.py
+"""Command-line entry point: generate, validate and save one simulation run."""
 
 import argparse
-from pathlib import Path
+import sys
 
 from copytrading_sim.config import load_config
-from copytrading_sim.paths import ensure_dir, resolve_project_path
-from copytrading_sim.simulator.strategy_generator import generate_strategies
-from copytrading_sim.simulator.user_generator import generate_users
-from copytrading_sim.simulator.compatibility import compute_compatibility
+from copytrading_sim.datasets.exporters import build_summary, save_run
+from copytrading_sim.paths import resolve_project_path
 from copytrading_sim.simulator.pipeline import run_pipeline
 
 
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Run copy-trading simulator skeleton."
-    )
-
-    parser.add_argument(
-        "--config",
-        type=str,
-        default="configs/small.yaml",
-        help="Path to YAML config file.",
-    )
-
-    return parser.parse_args()
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Generate and save a reproducible simulation run.")
+    parser.add_argument("--config", default="configs/small.yaml", help="Path to the main YAML config.")
+    parser.add_argument("--override", action="append", default=[], metavar="YAML",
+                        help="Explicit YAML overlay; repeatable, later files take precedence.")
+    parser.add_argument("--output-dir", help="Override output.dir (relative to project root).")
+    parser.add_argument("--run-id", help="Run directory name; must not already exist.")
+    parser.add_argument("--preview", type=int, default=0, metavar="N",
+                        help="Also print the first N rows of each table (default: no preview).")
+    return parser.parse_args(argv)
 
 
-# def main() -> None:
-#     args = parse_args()
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(argv)
+    try:
+        if args.preview < 0:
+            raise ValueError("--preview must be non-negative")
+        config_path = resolve_project_path(args.config)
+        overrides = [resolve_project_path(path) for path in args.override]
+        config = load_config(config_path, override_paths=overrides)
+        if args.output_dir:
+            config["output"]["dir"] = args.output_dir
+        tables = run_pipeline(config)
+        run_dir = save_run(tables, config, run_id=args.run_id)
+    except (OSError, ValueError) as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 2
 
-#     config_path = resolve_project_path(args.config)
-#     config = load_config(config_path)
-
-#     output_dir = resolve_project_path(config["output"]["dir"])
-#     ensure_dir(output_dir)
-
-#     simulation = config["simulation"]
-
-#     print(f"Config: {config_path}")
-#     print(f"Output dir: {output_dir}")
-#     print(f"Seed: {config['random']['seed']}")
-#     print(f"Users: {simulation['n_users']}")
-#     print(f"Strategies: {simulation['n_strategies']}")
-#     print(f"Exposures per user: {simulation['exposures_per_user']}")
-#     print()
-
-#     users = generate_users(config)
-#     strategies = generate_strategies(config)
-#     compatibility = compute_compatibility(users, strategies, top_k=5)
-
-#     print(users.head())
-#     print(strategies.head())
-#     print(compatibility.head())
-#     print(users.shape)
-#     print(strategies.shape)
-#     print(compatibility.shape)
-
-#     print("Success!")
-
-
-def main() -> None:
-    args = parse_args()
-
-    config_path = resolve_project_path(args.config)
-    config = load_config(config_path)
-    tables = run_pipeline(config)
-
+    summary = build_summary(tables)
+    print(f"Run saved: {run_dir}")
+    print("Structural validation: passed (not a validation of financial realism)")
     for name, table in tables.items():
-        print(f"\n{name}: {table.shape}")
-        print(table.head())
+        print(f"{name}: {table.shape}")
+        if args.preview:
+            print(table.head(args.preview).to_string(index=False))
+    print(f"Copy rate per slate: {summary['copy_rate_per_slate']:.4f}")
+    print(f"Copy rate per exposed item: {summary['copy_rate_per_exposed_item']:.4f}")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

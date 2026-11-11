@@ -7,6 +7,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from copytrading_sim.randomness import make_rng
+
 
 STRATEGY_GENERATOR_ARCHETYPES = (
     "conservative",
@@ -90,7 +92,7 @@ def generate_strategies(
     """
     if rng is None:
         seed = config["random"]["seed"]
-        rng = np.random.default_rng(seed)
+        rng = make_rng(seed, "strategies")
 
     n_strategies = int(config["simulation"]["n_strategies"])
     generator_archetypes = _sample_strategy_generator_archetypes(n_strategies, rng)
