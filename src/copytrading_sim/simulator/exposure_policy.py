@@ -7,6 +7,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from copytrading_sim.randomness import make_rng
+
 
 DEFAULT_EXPOSURE_POLICY_PARAMS = {
     "policy_name": "compatibility_popularity_mixed",
@@ -68,7 +70,7 @@ def generate_exposures(
 
     if rng is None:
         seed = int(config["random"]["seed"])
-        rng = np.random.default_rng(seed)
+        rng = make_rng(seed, "exposures")
 
     params = _get_exposure_policy_params(config)
 

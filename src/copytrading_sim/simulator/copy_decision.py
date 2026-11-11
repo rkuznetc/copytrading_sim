@@ -7,6 +7,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from copytrading_sim.randomness import make_rng
+
 
 DEFAULT_COPY_DECISION_PARAMS = {
     "compatibility_weight": 0.65,
@@ -61,7 +63,7 @@ def simulate_copy_decisions(
 
     if rng is None:
         seed = int(config["random"]["seed"])
-        rng = np.random.default_rng(seed)
+        rng = make_rng(seed, "copy_decisions")
 
     params = _get_copy_decision_params(config)
 

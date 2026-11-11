@@ -7,6 +7,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from copytrading_sim.randomness import make_rng
+
 
 USER_GENERATOR_ARCHETYPES = (
     "conservative",
@@ -85,7 +87,7 @@ def generate_users(
     """
     if rng is None:
         seed = config["random"]["seed"]
-        rng = np.random.default_rng(seed)
+        rng = make_rng(seed, "users")
 
     n_users = int(config["simulation"]["n_users"])
     generator_archetypes = _sample_user_generator_archetypes(n_users, rng)
