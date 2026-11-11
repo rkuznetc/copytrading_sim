@@ -7,6 +7,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from copytrading_sim.policies.base import SlatePolicy
+
 from copytrading_sim.randomness import make_rng
 
 
@@ -58,6 +60,7 @@ def generate_exposures(
     compatibility: pd.DataFrame,
     config: dict[str, Any],
     rng: np.random.Generator | None = None,
+    policy: SlatePolicy | None = None,
 ) -> pd.DataFrame:
     """Generate logged exposure events.
 
@@ -99,21 +102,23 @@ def generate_exposures(
         for timestamp_step in range(exposures_per_user):
             slate_id = f"user_{user_id}_step_{timestamp_step}"
 
-            slate = _sample_slate_plackett_luce(
-                candidates=user_candidates,
-                slate_size=slate_size,
-                slate_id=slate_id,
-                timestamp_step=timestamp_step,
-                params=params,
-                rng=rng,
-            )
+            if policy is None:
+                slate = _sample_slate_plackett_luce(
+                    candidates=user_candidates, slate_size=slate_size,
+                    slate_id=slate_id, timestamp_step=timestamp_step,
+                    params=params, rng=rng,
+                )
+            else:
+                slate = sample_policy_slate(
+                    user_candidates, policy, slate_size, slate_id, timestamp_step, rng,
+                )
             all_slates.append(slate)
 
     exposures = pd.concat(all_slates, ignore_index=True)
 
     exposures.insert(0, "exposure_id", np.arange(len(exposures), dtype=int))
     exposures["was_shown"] = 1
-    exposures["policy_name"] = params["policy_name"]
+    exposures["policy_name"] = policy.name if policy is not None else params["policy_name"]
 
     ordered_columns = [
         "exposure_id",
@@ -244,43 +249,22 @@ def _sample_slate_plackett_luce(
     The recorded position_probability is the probability of selecting
     the chosen item at its position, conditional on previous choices.
     """
-    remaining = candidates.copy().reset_index(drop=True)
-
-    logging_scores = _compute_logging_scores(
-        candidates=remaining,
-        params=params,
-        rng=rng,
+    # Array-based selection; no per-position DataFrame copies. Same random draws
+    # and conditional probabilities as the original implementation.
+    from copytrading_sim.policies.base import select_scores
+    scores = _compute_logging_scores(candidates, params, rng)
+    chosen = select_scores(
+        scores, candidates['strategy_id'].to_numpy(dtype=np.int64),
+        slate_size, rng, 'plackett_luce', float(params['temperature']),
     )
-    remaining["logging_score"] = logging_scores
-
-    selected_rows: list[pd.Series] = []
-    slate_probability_prefix = 1.0
-
-    temperature = float(params["temperature"])
-
-    for position in range(1, slate_size + 1):
-        probabilities = _softmax(
-            remaining["logging_score"].to_numpy(dtype=float),
-            temperature=temperature,
-        )
-
-        local_index = int(rng.choice(np.arange(len(remaining)), p=probabilities))
-        selected = remaining.iloc[local_index].copy()
-
-        position_probability = float(probabilities[local_index])
-        slate_probability_prefix *= position_probability
-
-        selected["slate_id"] = slate_id
-        selected["timestamp_step"] = timestamp_step
-        selected["position"] = position
-        selected["position_probability"] = position_probability
-        selected["slate_probability_prefix"] = slate_probability_prefix
-
-        selected_rows.append(selected)
-
-        remaining = remaining.drop(index=remaining.index[local_index]).reset_index(drop=True)
-
-    return pd.DataFrame(selected_rows)
+    slate = candidates.iloc[chosen.indices].copy().reset_index(drop=True)
+    slate['logging_score'] = chosen.scores
+    slate['slate_id'] = slate_id
+    slate['timestamp_step'] = timestamp_step
+    slate['position'] = np.arange(1, slate_size + 1, dtype=np.int64)
+    slate['position_probability'] = chosen.conditional_probabilities
+    slate['slate_probability_prefix'] = np.cumprod(chosen.conditional_probabilities)
+    return slate
 
 
 def _compute_logging_scores(
@@ -393,3 +377,35 @@ def _validate_inputs(
         raise ValueError(
             f"Missing compatibility columns: {sorted(missing_compatibility_columns)}"
         )
+
+
+def sample_policy_slate(
+    candidates: pd.DataFrame, policy: SlatePolicy, slate_size: int,
+    slate_id: str, timestamp_step: int, rng: np.random.Generator,
+) -> pd.DataFrame:
+    """Render one policy-selected slate; policies receive IDs, not oracle columns."""
+    if candidates.empty or candidates['user_id'].nunique() != 1:
+        raise ValueError('Expected candidates for exactly one user')
+    ids = candidates['strategy_id'].to_numpy(dtype=np.int64)
+    choice = policy.select(int(candidates['user_id'].iloc[0]), ids, slate_size, rng)
+    indices = np.asarray(choice.indices)
+    probabilities = np.asarray(choice.conditional_probabilities, dtype=float)
+    scores = np.asarray(choice.scores, dtype=float)
+    if (indices.shape != (slate_size,) or indices.dtype.kind not in 'iu'
+            or len(np.unique(indices)) != slate_size
+            or np.any(indices < 0) or np.any(indices >= len(candidates))):
+        raise ValueError('Policy returned invalid selected indices')
+    if (scores.shape != indices.shape or not np.isfinite(scores).all()
+            or probabilities.shape != indices.shape
+            or not np.isfinite(probabilities).all()
+            or np.any(probabilities <= 0) or np.any(probabilities > 1)):
+        raise ValueError('Policy returned invalid scores or probabilities')
+    slate = candidates.iloc[indices].copy().reset_index(drop=True)
+    slate['slate_id'] = slate_id
+    slate['timestamp_step'] = int(timestamp_step)
+    slate['position'] = np.arange(1, slate_size + 1, dtype=np.int64)
+    slate['logging_score'] = scores
+    slate['position_probability'] = probabilities
+    slate['slate_probability_prefix'] = np.cumprod(probabilities)
+    slate['selection_rule'] = choice.selection_rule
+    return slate

@@ -45,7 +45,7 @@ UNIT_INTERVAL_COLUMNS = {
     "risk_match", "drawdown_match", "horizon_match", "asset_match", "complexity_match",
     "compatibility_score", "strategy_risk_score", "strategy_max_drawdown_proxy",
     "strategy_popularity_score", "strategy_return_proxy", "strategy_complexity_score",
-    "logging_score", "position_probability", "slate_probability_prefix", "decision_score",
+    "position_probability", "slate_probability_prefix", "decision_score",
     "copy_probability", "no_copy_probability", "copy_rate_per_exposed_item", "copy_rate_per_slate",
 }
 INTEGER_COLUMNS = {
